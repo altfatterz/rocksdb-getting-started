@@ -16,17 +16,9 @@ public class KeyValueRepositoryImpl implements KeyValueRepository<String, String
     private RocksDB db;
 
     @PostConstruct
-    public void init() {
-        // a static method that loads the RocksDB C++ library.
-         RocksDB.loadLibrary();
-
-        // a factory method that returns a RocksDB instance
-        try (final RocksDB db = RocksDB.open("data")) {
-            this.db = db;
-        } catch (RocksDBException e) {
-            System.out.println("error: " + e);
-        }
-        System.out.println("RocksDB initialized");
+    public void init() throws RocksDBException {
+        RocksDB.loadLibrary();
+        db = RocksDB.open("data");
     }
 
 
@@ -35,23 +27,28 @@ public class KeyValueRepositoryImpl implements KeyValueRepository<String, String
         try {
             db.put(key.getBytes(), value.getBytes());
         } catch (RocksDBException e) {
-            logger.error("could not store value {} with key {} into RocksDB", value, key);
+            logger.error("could not store value: {} with key: {} into RocksDB", value, key);
         }
 
     }
 
     @Override
     public String find(String key) {
+        byte[] result = null;
         try {
-            return new String(db.get(key.getBytes()));
+            result = db.get(key.getBytes());
         } catch (RocksDBException e) {
-            logger.error("could not retrieve with key{}", key);
+            logger.error("could not retrieve value with key: {}, reason: {}", key, e.getMessage());
         }
-        return null;
+        return (result != null) ? new String(result) : null;
     }
 
     @Override
     public void delete(String key) {
-
+        try {
+            db.delete(key.getBytes());
+        } catch (RocksDBException e) {
+            logger.error("could not delete the value with key: {}, reason: {}", key, e.getMessage());
+        }
     }
 }

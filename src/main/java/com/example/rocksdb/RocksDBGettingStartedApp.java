@@ -1,6 +1,7 @@
 package com.example.rocksdb;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,17 +9,33 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class RocksDBGettingStartedApp implements CommandLineRunner {
 
-	@Autowired
-	private KeyValueRepository repository;
+    private final Logger logger = LoggerFactory.getLogger(RocksDBGettingStartedApp.class);
 
-	public static void main(String[] args) {
-		SpringApplication.run(RocksDBGettingStartedApp.class, args);
-	}
+    private final KeyValueRepository repository;
 
+    public RocksDBGettingStartedApp(KeyValueRepository repository) {
+        this.repository = repository;
+    }
 
-	@Override
-	public void run(String... args) throws Exception {
-		repository.save("foo", "bar");
-		System.out.println("key=foo, value=" + repository.find("foo") + "\"");
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(RocksDBGettingStartedApp.class, args);
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        String key = "foo";
+        String value = "bar";
+
+        logger.info("Saving value: `{}` with key: `{}` into RocksDB", value, key);
+        repository.save("foo", "bar");
+
+        Object result = repository.find(key);
+        logger.info("Retrieving value: `{}` with key: `{}` from RocksDB", result, key);
+
+        logger.info("Deleted value with key: `{}`", key);
+        repository.delete("foo");
+
+        result = repository.find(key);
+        logger.info("Retrieving value: `{}` with key: `{}` from RocksDB", result, key);
+    }
 }
